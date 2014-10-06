@@ -1,0 +1,105 @@
+<!Doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>control walking</title>
+    <style>
+        body {
+            font-family: monospace;
+        }
+        canvas {
+            border: solid 1px #000;
+        }
+    </style>
+</head>
+<body>
+    <h3>Bewege dich mit den Pfeiltasten.</h3>
+    <script src="../js/phaser/phaser.min.js"></script>
+    <script>
+        var game = new Phaser.Game(480, 320, Phaser.AUTO, 'control-walking', {
+            preload: preload,
+            create: create,
+            update: update
+        });
+        game.transparent = true;
+
+        function preload() {
+            game.load.image('map', '../assets/sprites/maps/island_01.jpg');
+            game.load.atlasJSONHash('takashi_komuro', '../assets/sprites/chars/takashi_komuro.png', '../assets/sprites/chars/takashi_komuro.json');
+        }
+
+        var takashi_komuro, cursors;
+        
+        var current, hStep = 2, vStep = 2;
+        var animations = {
+            down : 'walk_down',
+            left : 'walk_left',
+            up : 'walk_up',
+            right : 'walk_right'
+        };
+        var movements = {
+            down : function (sprite) { sprite.y += vStep; },
+            left : function (sprite) { sprite.x -= hStep; },
+            up : function (sprite) { sprite.y -= vStep; },
+            right : function (sprite) { sprite.x += hStep; }
+        };
+
+        function create() {
+            game.world.setBounds(0, 0, 1599, 917);
+            game.add.sprite(0, 0, 'map');
+            takashi_komuro = game.add.sprite(184, 36, 'takashi_komuro');
+            takashi_komuro.animations.add('walk_down', [0, 1, 0, 2]);
+            takashi_komuro.animations.add('walk_left', [3, 4, 3, 5]);
+            takashi_komuro.animations.add('walk_right', [6, 7, 6, 8]);
+            takashi_komuro.animations.add('walk_up', [9, 10, 9, 11]);
+            game.camera.follow(takashi_komuro);
+            cursors = game.input.keyboard.createCursorKeys();
+        }
+        
+        function startAnimation (newAnimation) {
+            takashi_komuro.animations.play(newAnimation, 5, true);
+            current = newAnimation;
+        }
+        
+        function stopCurrentAnimation (newAnimation) {
+            if (current) {
+                takashi_komuro.animations.stop(current, true);
+                current = undefined;
+            }
+        }
+        
+        function changeAnimation (newAnimation) {
+            if (newAnimation !== current) {
+                stopCurrentAnimation();
+                startAnimation(newAnimation);
+            }
+        }
+
+        function update () {
+            var movement = false;
+            if (cursors.left.isDown) {
+                movements.left(takashi_komuro);
+                changeAnimation(animations.left);
+                movement = true;
+            } else if (cursors.right.isDown) {
+                movements.right(takashi_komuro);
+                changeAnimation(animations.right);
+                movement = true;
+            }
+            if (cursors.up.isDown) {
+                movements.up(takashi_komuro);
+                changeAnimation(animations.up);
+                movement = true;
+            } else if (cursors.down.isDown) {
+                movements.down(takashi_komuro);
+                changeAnimation(animations.down);
+                movement = true;
+            }
+            if (!movement) {
+                stopCurrentAnimation();
+            }
+        }
+    </script>
+</body>
+
+</html>
