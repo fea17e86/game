@@ -28,22 +28,24 @@
     <script src="../../js/tileset.js"></script>
     <script src="../../js/map.js"></script>
     <script>
+        var Phaser = Phaser;
+        var Fea = Fea;
+    
+        var resources = {
+            sprites : {"Tileset": "../../assets/sprites/terrain/Tileset.png"},
+            json : {"first" : "../../assets/data/maps/first.json"}
+        };
+    
         var game = new Phaser.Game($('.game').width(), $('.game').height(), Phaser.AUTO, 'game_container', {
             preload: preload,
             create: create,
             update: update
         });
         game.transparent = true;
-        
-        var resources = {
-            sprites : {"Tileset": "../../assets/sprites/terrain/Tileset.png"},
-            json : {"first" : "../../assets/data/maps/first.json"}
-        };
-        
-        var maps = {};
+        game.maps = {};
         
         function preload () {
-            var oldJSONLC = game.load.jsonLoadComplete;
+            var superJLC = game.load.jsonLoadComplete;
             game.load.jsonLoadComplete = function (index) {
                 var name = this._fileList[index].key;
                 var data; 
@@ -54,7 +56,7 @@
                 }
                 //console.log(name, data);
                 if (data) {
-                    maps[name] = new Fea.Map({ json : data, game : game });
+                    game.maps[name] = new Fea.Map({ json : data, game : game });
                     for (var i=0; i<data.tilesets.length; i++) {
                         var ts = data.tilesets[i];
                         if (resources.sprites[ts.name]) {
@@ -62,7 +64,7 @@
                         }
                     }
                 }
-                oldJSONLC.apply(this, [index]);
+                superJLC.apply(this, [index]);
             };
             for (var j in resources.json) {
                 game.load.json(j, resources.json[j], true);
@@ -85,7 +87,7 @@
                     y += m.tileHeight;
                 }
             }*/
-            maps.first.draw(0, 0);
+            game.maps.first.draw(0, 0);
         }
 
         function update () { }

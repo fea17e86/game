@@ -43,7 +43,7 @@ Fea.Map.prototype.initialize = function (options) {
 Fea.Map.prototype.absoluteHeight = function () {
     return this.height && this.tileHeight ? this.height * this.tileHeight : 0;
 };
-Fea.Map.prototype.absolueWidth = function () {
+Fea.Map.prototype.absoluteWidth = function () {
     return this.width && this.tileWidth ? this.width * this.tileWidth : 0;
 };
 Fea.Map.prototype.draw = function (x, y) {
@@ -78,7 +78,6 @@ Fea.Map.prototype.Layer.prototype.initialize = function (options) {
     if (o.json) {
         var j = o.json;
         if (!j.name || !j.type || !(j.data || j.objects)) {
-            console.log(j);
             throw "Unexpected JSON format for Fea.Map.Layer()!";
         } else {
             this.name = j.name;

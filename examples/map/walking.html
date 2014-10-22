@@ -1,0 +1,166 @@
+<!Doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>walk in map</title>
+    <style>
+        body {
+            font-family: monospace;
+        }
+        .game {
+            border: solid 1px #999;
+            height: 400px;
+            margin: 100px auto 0 auto;
+            position: relative;
+            width: 800px;
+        }
+        .game > canvas {
+            left: 0;
+            position: absolute;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game_container" class="game"></div>
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="../../js/phaser/phaser.min.js"></script>
+    <script src="../../js/tileset.js"></script>
+    <script src="../../js/map.js"></script>
+    <script>
+        var Phaser = Phaser;
+        var Fea = Fea;
+    
+        var map = {
+            json : {"first" : "../../assets/data/maps/first.json"},
+            sprites : {"Tileset": "../../assets/sprites/terrain/Tileset.png"}
+        };
+        
+        var char = {
+            json : {"harry" : "../../assets/data/animations/Harry_potter.json"},
+            sprites : {"harry" : "../../assets/sprites/chars/Harry_potter.png"}
+        };
+    
+        var game = new Phaser.Game($('.game').width(), $('.game').height(), Phaser.AUTO, 'game_container', {
+            preload: preload,
+            create: create,
+            update: update
+        });
+        game.transparent = true;
+        game._data = {
+            maps : {}, chars : {}, cursors : {},
+            animations : {
+                down : 'walk_down',
+                left : 'walk_left',
+                up : 'walk_up',
+                right : 'walk_right'
+            },
+            movements : {
+                hStep : 3, vStep : 3,
+                down : function (sprite) { sprite.y += this.vStep; },
+                left : function (sprite) { sprite.x -= this.hStep; },
+                up : function (sprite) { sprite.y -= this.vStep; },
+                right : function (sprite) { sprite.x += this.hStep; }
+            }
+        };
+        
+        function preload () {
+            var superJLC = game.load.jsonLoadComplete;
+            game.load.jsonLoadComplete = function (index) {
+                var name = this._fileList[index].key;
+                if (map.json[name]) {
+                    var data; 
+                    if (this._ajax && this._ajax.responseText) {
+                        data = JSON.parse(this._ajax.responseText);
+                    } else {
+                        data = JSON.parse(this._xhr.responseText);
+                    }
+                    if (data) {
+                        this.game._data.maps[name] = new Fea.Map({ json : data, game : this.game });
+                        var w = Math.max(this.game.world.bounds.width, this.game._data.maps[name].absoluteWidth());
+                        var h = Math.max(this.game.world.bounds.height, this.game._data.maps[name].absoluteHeight());
+                        this.game.world.setBounds(this.game.world.bounds.x, this.game.world.bounds.y, w, h);
+                        for (var i=0; i<data.tilesets.length; i++) {
+                            var ts = data.tilesets[i];
+                            if (map.sprites[ts.name]) {
+                                this.spritesheet(ts.name, map.sprites[ts.name], ts.tilewidth, ts.tileheight, -1,  ts.margin, ts.spacing);
+                            }
+                        }
+                    }
+                }
+                superJLC.apply(this, [index]);
+            };
+            for (var m in map.json) {
+                game.load.json(m, map.json[m], true);
+            }
+            for (var c in char.json) {
+                game._data.chars[c] = {};
+                game.load.atlasJSONHash(c, char.sprites[c], char.json[c]);
+            }
+        }
+
+        function create () {
+            if (game._data.maps["first"]) {
+                game._data.maps["first"].draw(0, 0);
+            }
+            if (game._data.chars["harry"]) {
+                game._data.chars["harry"] = game.add.sprite(184, 36, "harry");
+                game._data.chars["harry"].animations._data = { current : undefined };
+                game._data.chars["harry"].animations.add(game._data.animations.down, [1, 2, 1, 0]);
+                game._data.chars["harry"].animations.add(game._data.animations.left, [4, 5, 4, 3]);
+                game._data.chars["harry"].animations.add(game._data.animations.right, [7, 8, 7, 6]);
+                game._data.chars["harry"].animations.add(game._data.animations.up, [10, 11, 10, 9]);
+                game.camera.follow(game._data.chars["harry"]);
+            }
+            game._data.cursors = game.input.keyboard.createCursorKeys();
+        }
+
+        function update () {
+            var movement = false;
+            if (game._data.chars["harry"]) {
+                if (game._data.cursors.left.isDown) {
+                    game._data.movements.left(game._data.chars["harry"]);
+                    changeAnimation(game._data.animations.left);
+                    movement = true;
+                } else if (game._data.cursors.right.isDown) {
+                    game._data.movements.right(game._data.chars["harry"]);
+                    changeAnimation(game._data.animations.right);
+                    movement = true;
+                } else if (game._data.cursors.up.isDown) {
+                    game._data.movements.up(game._data.chars["harry"]);
+                    changeAnimation(game._data.animations.up);
+                    movement = true;
+                } else if (game._data.cursors.down.isDown) {
+                    game._data.movements.down(game._data.chars["harry"]);
+                    changeAnimation(game._data.animations.down);
+                    movement = true;
+                }
+            }
+            if (!movement) {
+                stopCurrentAnimation();
+            }
+        }
+        
+        function startAnimation (newAnimation) {
+            if (game._data.chars["harry"]) {
+                game._data.chars["harry"].animations.play(newAnimation, 5, true);
+                game._data.chars["harry"].animations._data.current = newAnimation; 
+            }
+        }
+        
+        function stopCurrentAnimation (newAnimation) {
+            if (game._data.chars["harry"] && game._data.chars["harry"].animations._data.current) {
+                game._data.chars["harry"].animations.stop(game._data.chars["harry"].animations._data.current, true);
+                game._data.chars["harry"].animations._data.current = undefined;
+            }
+        }
+        
+        function changeAnimation (newAnimation) {
+            if (game._data.chars["harry"] && newAnimation !== game._data.chars["harry"].animations._data.current) {
+                stopCurrentAnimation();
+                startAnimation(newAnimation);
+            }
+        }
+    </script>
+</body>
+</html>
