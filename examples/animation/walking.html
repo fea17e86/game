@@ -1,0 +1,76 @@
+<!Doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>walking animation (phaser)</title>
+    <style>
+        body {
+            font-family: monospace;
+        }
+        canvas {
+            border: solid 1px #ccc;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h3>Klicke in das Canvas Element.</h3>
+    <script src="../../js/phaser/phaser.min.js"></script>
+    <script>
+        var game = new Phaser.Game(400, 120, Phaser.AUTO, 'animation-walking', {
+            preload: preload,
+            create: create,
+            update: update
+        });
+        game.transparent = true;
+
+        function preload() {
+            game.load.atlasJSONHash('harry', '../../assets/sprites/chars/Harry_potter.png', '../../assets/data/animations/Harry_potter.json');
+        }
+
+        var harry;
+        
+        var current = 0, hStep = 1, vStep = 1;
+        var animations = ['walk_down', 'walk_left', 'walk_up', 'walk_right'];
+        var movements = [
+            function (sprite) { sprite.y += vStep; },
+            function (sprite) { sprite.x -= hStep; },
+            function (sprite) { sprite.y -= vStep; },
+            function (sprite) { sprite.x += hStep; }
+        ];
+
+        function create() {
+            harry = game.add.sprite(184, 36, 'harry');
+            harry.animations.add('walk_down', [1, 2, 1, 0]);
+            harry.animations.add('walk_left', [4, 5, 4, 3]);
+            harry.animations.add('walk_right', [7, 8, 7, 6]);
+            harry.animations.add('walk_up', [10, 11, 10, 9]);
+            harry.animations.play(animations[current], 5, true);
+            game.input.onDown.add(changeAnimation, this);
+        }
+        
+        function changeAnimation () {
+            harry.animations.stop(animations[current], true);
+            current++;
+            if (current > animations.length - 1) {
+                current = 0;
+            }
+            harry.animations.play(animations[current], 5, true);
+        }
+
+        function update () {
+            movements[current](harry);
+            if (harry.x < -harry.width) {
+                harry.x = game.world.width;
+            } else if (harry.x > game.world.width) {
+                harry.x = -harry.width;
+            }
+            if (harry.y < -harry.height) {
+                harry.y = game.world.height;
+            } else if (harry.y > game.world.height) {
+                harry.y = -harry.height;
+            }
+        }
+    </script>
+</body>
+</html>

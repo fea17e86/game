@@ -1,0 +1,30 @@
+<!Doctype html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <title>simple animation (phaser)</title>
+      <style>
+         body { font-family: monospace; }
+      </style>
+   </head>
+   <body>
+      <h4>Frame-Reihenfolge: 0, 1, 2, 1</h4>
+      <script src="../../js/phaser/phaser.min.js"></script>
+      <script>
+         var game = new Phaser.Game(32, 32, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update });
+         game.transparent = true;
+
+         function preload () {
+            game.load.spritesheet('harry', '../../assets/sprites/chars/Harry_potter.png', 32, 32);
+         }
+
+         function create () {
+            var harry = game.add.sprite(0, 0, 'harry');
+            harry.animations.add('walk', [0, 1, 2, 1]);
+            harry.animations.play('walk', 5, true);
+         }
+
+         function update () {}
+      </script>
+   </body>
+</html>
