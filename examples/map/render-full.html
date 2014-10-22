@@ -2,16 +2,9 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>render map</title>
+    <title>render map full</title>
     <style>
-        .game {
-            border: solid 1px #999;
-            height: 400px;
-            margin: 100px auto 0 auto;
-            position: relative;
-            width: 800px;
-        }
-        .game > canvas {
+        canvas {
             left: 0;
             position: absolute;
             top: 0;
@@ -19,27 +12,29 @@
     </style>
 </head>
 <body>
-    <div id="game_container" class="game"></div>
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="../../js/phaser/phaser.min.js"></script>
+    <script src="../../js/phaser-ext.js"></script>
     <script src="../../js/tileset.js"></script>
     <script src="../../js/map.js"></script>
     <script>
         var Phaser = Phaser;
         var Fea = Fea;
+        
+        
     
         var resources = {
             sprites : {"Tileset": "../../assets/sprites/terrain/Tileset.png"},
             json : {"first" : "../../assets/data/maps/first.json"}
         };
     
-        var game = new Phaser.Game($('.game').width(), $('.game').height(), Phaser.AUTO, 'game_container', {
+        var game = new Phaser.Game(800, 600, Phaser.AUTO, "", {
             preload: preload,
             create: create,
             update: update
         });
         game.transparent = true;
-        game.maps = {};
+        game._data = { maps : {} };
         
         function preload () {
             var superJLC = game.load.jsonLoadComplete;
@@ -51,9 +46,11 @@
                 } else {
                     data = JSON.parse(this._xhr.responseText);
                 }
-                //console.log(name, data);
                 if (data) {
-                    game.maps[name] = new Fea.Map({ json : data, game : game });
+                    game._data.maps[name] = new Fea.Map({ json : data, game : game });
+                    var w = Math.max(this.game.width, this.game._data.maps[name].absoluteWidth());
+                    var h = Math.max(this.game.height, this.game._data.maps[name].absoluteHeight());
+                    this.game.resize(w, h);
                     for (var i=0; i<data.tilesets.length; i++) {
                         var ts = data.tilesets[i];
                         if (resources.sprites[ts.name]) {
@@ -70,24 +67,10 @@
         }
 
         function create () {
-            /*console.log(maps);
-            var m = maps.first;
-            var test = [25, 29, 51, 52, 60];
-            var x = 0, y = 0;
-            for (var i=0; i<test.length; i++) {
-                var ts = m.tilesets.find(test[i]);
-                console.log(test[i]+":", ts.tileCoordinates(test[i]), ts.tileCoordinatesPixel(test[i]));
-                game.add.sprite(x, y, ts.name, test[i]-1);
-                x += m.tileWidth;
-                if (x >= game.width) {
-                    x = 0;
-                    y += m.tileHeight;
-                }
-            }*/
-            game.maps.first.draw(0, 0);
+            game._data.maps["first"].draw(0, 0);
         }
 
-        function update () { }
+        function update () {}
     </script>
 </body>
 </html>
