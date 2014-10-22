@@ -4,8 +4,8 @@ Fea.Map = function (options) {
     this.game = undefined;
     this.height = 0;
     this.width = 0;
-    this.tileHeight = 0;
-    this.tileWidth = 0;
+    this.tileheight = 0;
+    this.tilewidth = 0;
     this.layers = [];
     this.tilesets = undefined;
     this.initialize(options);
@@ -20,8 +20,8 @@ Fea.Map.prototype.initialize = function (options) {
         } else {
             this.height = j.height;
             this.width = j.width;
-            this.tileHeight = j.tileheight;
-            this.tileWidth = j.tilewidth;
+            this.tileheight = j.tileheight;
+            this.tilewidth = j.tilewidth;
             this.tilesets = Fea.Map.prototype.createTilesetManager();
             for (var i=0; i<j.tilesets.length; i++) {
                 this.tilesets[i] = new Fea.Tileset({ json : j.tilesets[i], game : this.game });
@@ -32,8 +32,8 @@ Fea.Map.prototype.initialize = function (options) {
                         json : j.layers[i], 
                         game : this.game, 
                         tilesets : this.tilesets, 
-                        tileWidth : this.tileWidth, 
-                        tileHeight : this.tileHeight
+                        tilewidth : this.tilewidth, 
+                        tileheight : this.tileheight
                     }));
                 }
             }
@@ -41,10 +41,10 @@ Fea.Map.prototype.initialize = function (options) {
     }
 };
 Fea.Map.prototype.absoluteHeight = function () {
-    return this.height && this.tileHeight ? this.height * this.tileHeight : 0;
+    return this.height && this.tileheight ? this.height * this.tileheight : 0;
 };
 Fea.Map.prototype.absoluteWidth = function () {
-    return this.width && this.tileWidth ? this.width * this.tileWidth : 0;
+    return this.width && this.tilewidth ? this.width * this.tilewidth : 0;
 };
 Fea.Map.prototype.draw = function (x, y) {
     if (this.game) {
@@ -65,16 +65,16 @@ Fea.Map.prototype.Layer = function (options) {
     this.y = 0;
     this.height = 0;
     this.width = 0;
-    this.tileHeight = 0;
-    this.tileWidth = 0;
+    this.tileheight = 0;
+    this.tilewidth = 0;
     this.initialize(options);
 };
 Fea.Map.prototype.Layer.prototype.initialize = function (options) {
     var o = options || {};
     this.game = o.game;
     this.tilesets = o.tilesets;
-    this.tileWidth = o.tileWidth || 0;
-    this.tileHeight = o.tileHeight || 0;
+    this.tilewidth = o.tilewidth || 0;
+    this.tileheight = o.tileheight || 0;
     if (o.json) {
         var j = o.json;
         if (!j.name || !j.type || !(j.data || j.objects)) {
@@ -102,10 +102,10 @@ Fea.Map.prototype.Layer.prototype.draw = function (hash, x, y) {
                     this.game.add.sprite(p.x, p.y, ts.name, n-1);
                 }
             }
-            p.x += this.tileWidth;
-            if (p.x >= this.width * this.tileWidth) {
+            p.x += this.tilewidth;
+            if (p.x >= this.width * this.tilewidth) {
                 p.x = x || this.x;
-                p.y += this.tileHeight;
+                p.y += this.tileheight;
             }
         }
     }

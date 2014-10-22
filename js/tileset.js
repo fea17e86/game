@@ -5,12 +5,12 @@ Fea.Tileset = function (options) {
     this.name = '';
     this.height = 0;
     this.width = 0;
-    this.tileHeight = 0;
-    this.tileWidth = 0;
+    this.tileheight = 0;
+    this.tilewidth = 0;
     this.margin = 0;
     this.spacing = 0;
-    this.from = 0;
-    this.to = 0;
+    this.firstgid = 0;
+    this.lastgid = 0;
     this.initialize(options);
 };
 Fea.Tileset.prototype.initialize = function (options) {
@@ -24,35 +24,35 @@ Fea.Tileset.prototype.initialize = function (options) {
             this.name = j.name;
             this.height = j.imageheight;
             this.width = j.imagewidth;
-            this.tileHeight = j.tileheight;
-            this.tileWidth = j.tilewidth;
+            this.tileheight = j.tileheight;
+            this.tilewidth = j.tilewidth;
             this.margin = j.margin || 0;
             this.spacing = j.spacing || 0;
-            this.from = o.from || j.firstgid || 1;
-            this.to = this.from + this.rows() * this.cols();
+            this.firstgid = o.firstgid || j.firstgid || 1;
+            this.lastgid = this.firstgid + this.rows() * this.cols() - 1;
         }
     }
 };
 Fea.Tileset.prototype.cols = function () {
-    return Math.floor((this.width - 2*this.margin + this.spacing) / (this.tileWidth + this.spacing));
+    return Math.floor((this.width - 2*this.margin + this.spacing) / (this.tilewidth + this.spacing));
 };
 Fea.Tileset.prototype.rows = function () {
-    return Math.floor((this.height - 2*this.margin + this.spacing) / (this.tileHeight + this.spacing));
+    return Math.floor((this.height - 2*this.margin + this.spacing) / (this.tileheight + this.spacing));
 };
 Fea.Tileset.prototype.firstGID = function (gid) {
-    if (gid && (gid !== this.from)) {
-        this.from = Math.max(1, gid);
-        this.to = this.from + this.rows() * this.cols();
+    if (gid && (gid !== this.firstgid)) {
+        this.firstgid = Math.max(1, gid);
+        this.lastgid = this.firstgid + this.rows() * this.cols() - 1;
     } else {
-        return this.from;
+        return this.firstgid;
     }
 };
 Fea.Tileset.prototype.contains = function (index) {
-    return index >= this.from && index < this.to;
-}
+    return index >= this.firstgid && index <= this.lastgid;
+};
 Fea.Tileset.prototype.tileCoordinates = function (index) {
     if (this.contains(index)) {
-        var n = index - this.from;
+        var n = index - this.firstgid;
         var cols = this.cols();
         var y = Math.floor(n / cols);
         if (y < this.rows()) {
@@ -65,8 +65,8 @@ Fea.Tileset.prototype.tileCoordinatesPixel = function (index) {
         var coords = index.x && index.y ? index : this.tileCoordinates(index);
         if (coords !== undefined && coords.x !== undefined && coords.y !== undefined)  {
             return {
-                x : this.margin + (coords.x) * (this.tileWidth + this.spacing),
-                y : this.margin + (coords.y) * (this.tileHeight + this.spacing)
+                x : this.margin + (coords.x) * (this.tilewidth + this.spacing),
+                y : this.margin + (coords.y) * (this.tileheight + this.spacing)
             };
         }
     }
