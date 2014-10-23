@@ -1,7 +1,7 @@
 var Fea = Fea || {};
 
 Fea.Tileset = function (options) {
-    this.game = undefined;
+    this.sprite = undefined;
     this.name = '';
     this.height = 0;
     this.width = 0;
@@ -15,7 +15,7 @@ Fea.Tileset = function (options) {
 };
 Fea.Tileset.prototype.initialize = function (options) {
     var o = options || {};
-    this.game = o.game;
+    this.sprite = o.sprite;
     if (o.json) {
         var j = o.json;
         if (!j.name || !j.tileheight || !j.tilewidth || !j.imageheight || !j.imagewidth) {

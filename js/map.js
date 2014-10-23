@@ -1,7 +1,9 @@
 var Fea = Fea || {};
 
 Fea.Map = function (options) {
-    this.game = undefined;
+    this.phaser = undefined;
+    this.context = undefined;
+    this.sprites = undefined;
     this.height = 0;
     this.width = 0;
     this.tileheight = 0;
@@ -12,7 +14,9 @@ Fea.Map = function (options) {
 };
 Fea.Map.prototype.initialize = function (options) {
     var o = options || {};
-    this.game = o.game;
+    this.phaser = o.phaser;
+    this.context = o.context;
+    this.sprites = o.sprites;
     if (o.json) {
         var j = o.json;
         if (!j.height || !j.width || !j.tileheight || !j.tilewidth || !j.layers || !j.tilesets) {
@@ -24,13 +28,18 @@ Fea.Map.prototype.initialize = function (options) {
             this.tilewidth = j.tilewidth;
             this.tilesets = Fea.Map.prototype.createTilesetManager();
             for (var i=0; i<j.tilesets.length; i++) {
-                this.tilesets[i] = new Fea.Tileset({ json : j.tilesets[i], game : this.game });
+                this.tilesets[i] = new Fea.Tileset({
+                    json : j.tilesets[i], 
+                    sprite : this.sprites ? this.sprites[j.tilesets[i].name] : undefined
+                    
+                });
             }
             for (i=0; i<j.layers.length; i++) {
                 if (j.layers[i].visible === true) {
                     this.layers.push(new Fea.Map.prototype.Layer({
                         json : j.layers[i], 
-                        game : this.game, 
+                        phaser : this.phaser,
+                        context : this.context,
                         tilesets : this.tilesets, 
                         tilewidth : this.tilewidth, 
                         tileheight : this.tileheight
@@ -47,16 +56,16 @@ Fea.Map.prototype.absoluteWidth = function () {
     return this.width && this.tilewidth ? this.width * this.tilewidth : 0;
 };
 Fea.Map.prototype.draw = function (x, y) {
-    if (this.game) {
-        var hash = [];
-        for (var l=0; l<this.layers.length; l++) {
-            hash = this.layers[l].draw(hash, x, y);
-        }
+    console.log('Fea.Map.draw', this.phaser, this.context);
+    var hash = [];
+    for (var l=0; l<this.layers.length; l++) {
+        hash = this.layers[l].draw(hash, x, y);
     }
 };
 
 Fea.Map.prototype.Layer = function (options) {
-    this.game = undefined;
+    this.phaser = undefined;
+    this.context = undefined;
     this.tilesets = undefined;
     this.name = '';
     this.type = '';
@@ -71,7 +80,8 @@ Fea.Map.prototype.Layer = function (options) {
 };
 Fea.Map.prototype.Layer.prototype.initialize = function (options) {
     var o = options || {};
-    this.game = o.game;
+    this.phaser = o.phaser;
+    this.context = o.context;
     this.tilesets = o.tilesets;
     this.tilewidth = o.tilewidth || 0;
     this.tileheight = o.tileheight || 0;
@@ -93,13 +103,23 @@ Fea.Map.prototype.Layer.prototype.initialize = function (options) {
 Fea.Map.prototype.Layer.prototype.draw = function (hash, x, y) {
     hash = hash || [];
     var p = { x : x || this.x, y : y || this.y };
-    if (this.game && this.tilesets && this.type === 'tilelayer') {
+    console.log('Fea.Map.Layer.draw', this.phaser, this.context);
+    if (this.tilesets && this.type === 'tilelayer' && (this.phaser || this.context)) {
         for (var i=0; i<this.data.length; i++) {
             var n = this.data[i];
             if (n > 0) {
                 var ts = hash[n] ? hash[n] : (hash[n] = this.tilesets.find(n));
                 if (ts) {
-                    this.game.add.sprite(p.x, p.y, ts.name, n-1);
+                    if (this.phaser) {
+                        this.phaser.add.sprite(p.x, p.y, ts.name, n-1);
+                    } else if (this.context) {
+                        var coords = ts.tileCoordinatesPixel(n);
+                        if (coords) {
+                            this.context.drawImage(ts.sprite, coords.x, coords.y, ts.tilewidth, ts.tileheight, 
+                                        p.x, p.y, ts.tilewidth, ts.tileheight);
+                        }
+                    }
+                    
                 }
             }
             p.x += this.tilewidth;

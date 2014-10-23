@@ -45,7 +45,7 @@
                     data = JSON.parse(this._xhr.responseText);
                 }
                 if (data) {
-                    game._data.maps[name] = new Fea.Map({ json : data, game : game });
+                    game._data.maps[name] = new Fea.Map({ json : data, phaser : game });
                     var w = Math.max(this.game.width, this.game._data.maps[name].absoluteWidth());
                     var h = Math.max(this.game.height, this.game._data.maps[name].absoluteHeight());
                     this.game.resize(w, h);

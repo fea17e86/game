@@ -1,0 +1,81 @@
+<!Doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>render full map (jQuery)</title>
+    <style>
+        body {
+            margin : 0;
+            padding : 0;
+        }
+        canvas {
+            left: 0;
+            position: absolute;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="../../js/phaser/phaser.min.js"></script>
+    <script src="../../js/tileset.js"></script>
+    <script src="../../js/map.js"></script>
+    <script>
+        var Phaser = Phaser;
+        var Fea = Fea;
+    
+        var resources = {
+            sprites : {"Tileset": "../../assets/sprites/terrain/Tileset.png"},
+            json : {"first" : "../../assets/data/maps/first.json"}
+        };
+        
+        $(function () {
+            preload();            
+        });
+        
+        function preload () {
+            $.getJSON(resources.json.first).done(function (data) {
+                resources.json.first = data;
+                $("<img />").attr("src", resources.sprites.Tileset).load(function(event) {
+                    if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+                        console.log("Couldn't load image '"+ resources.sprites.Tileset +"'!");
+                        resources.sprites.Tileset = undefined;
+                    } else {
+                        resources.sprites.Tileset = this;
+                    }
+                    onPreloadDone();
+                });
+            }).fail(function () {
+                console.log("Couldn't load json file '"+ resources.json.first +"'!");
+                resources.json.first = undefined;
+            });
+        }
+        
+        function onPreloadDone () {
+            create();
+        }
+        
+        function create () {
+            if (resources.json.first && resources.sprites.Tileset) {
+                var j = resources.json.first;
+                var canvas = createCanvas(j.width * j.tilewidth, j.height * j.tileheight);
+                if (canvas) {
+                    $("body").append(canvas);
+                    resources.maps = {
+                        first : new Fea.Map({
+                            json : j, 
+                            context : canvas.getContext("2d"),
+                            sprites : resources.sprites
+                        })
+                    };
+                    resources.maps.first.draw();
+                }
+            }
+        }
+        
+        function createCanvas (width, height) {
+            return $('<canvas width="'+ width +'" height="'+ height +'"></canvas>')[0];
+        }
+    </script>
+</body>
+</html>

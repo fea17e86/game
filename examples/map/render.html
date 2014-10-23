@@ -53,7 +53,7 @@
                 }
                 //console.log(name, data);
                 if (data) {
-                    game.maps[name] = new Fea.Map({ json : data, game : game });
+                    game.maps[name] = new Fea.Map({ json : data, phaser : game });
                     for (var i=0; i<data.tilesets.length; i++) {
                         var ts = data.tilesets[i];
                         if (resources.sprites[ts.name]) {
