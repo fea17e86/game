@@ -1,0 +1,93 @@
+<!Doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>render map</title>
+    <style>
+        .game {
+            border: solid 1px #999;
+            height: 400px;
+            margin: 100px auto 0 auto;
+            position: relative;
+            width: 800px;
+        }
+        .game > canvas {
+            left: 0;
+            position: absolute;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game_container" class="game"></div>
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="../../js/phaser/phaser.min.js"></script>
+    <script src="../../js/tileset.js"></script>
+    <script src="../../js/map.js"></script>
+    <script>
+        var Phaser = Phaser;
+        var Fea = Fea;
+    
+        var resources = {
+            sprites : {"Tileset": "../../assets/sprites/terrain/Tileset.png"},
+            json : {"first" : "../../assets/data/maps/first.json"}
+        };
+    
+        var game = new Phaser.Game($('.game').width(), $('.game').height(), Phaser.AUTO, 'game_container', {
+            preload: preload,
+            create: create,
+            update: update
+        });
+        game.transparent = true;
+        game.maps = {};
+        
+        function preload () {
+            var superJLC = game.load.jsonLoadComplete;
+            game.load.jsonLoadComplete = function (index) {
+                var name = this._fileList[index].key;
+                var data; 
+                if (this._ajax && this._ajax.responseText) {
+                    data = JSON.parse(this._ajax.responseText);
+                } else {
+                    data = JSON.parse(this._xhr.responseText);
+                }
+                //console.log(name, data);
+                if (data) {
+                    game.maps[name] = new Fea.Map({ json : data, phaser : game });
+                    for (var i=0; i<data.tilesets.length; i++) {
+                        var ts = data.tilesets[i];
+                        if (resources.sprites[ts.name]) {
+                            this.spritesheet(ts.name, resources.sprites[ts.name], ts.tilewidth, ts.tileheight, -1,  ts.margin, ts.spacing);
+                        }
+                    }
+                }
+                superJLC.apply(this, [index]);
+            };
+            for (var j in resources.json) {
+                game.load.json(j, resources.json[j], true);
+            }
+
+        }
+
+        function create () {
+            /*console.log(maps);
+            var m = maps.first;
+            var test = [25, 29, 51, 52, 60];
+            var x = 0, y = 0;
+            for (var i=0; i<test.length; i++) {
+                var ts = m.tilesets.find(test[i]);
+                console.log(test[i]+":", ts.tileCoordinates(test[i]), ts.tileCoordinatesPixel(test[i]));
+                game.add.sprite(x, y, ts.name, test[i]-1);
+                x += m.tileWidth;
+                if (x >= game.width) {
+                    x = 0;
+                    y += m.tileHeight;
+                }
+            }*/
+            game.maps.first.draw(0, 0);
+        }
+
+        function update () { }
+    </script>
+</body>
+</html>

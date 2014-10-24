@@ -2,7 +2,7 @@ var Fea = Fea || {};
 
 Fea.Map = function (options) {
     this.phaser = undefined;
-    this.context = undefined;
+    this.canvas = undefined;
     this.sprites = undefined;
     this.height = 0;
     this.width = 0;
@@ -15,7 +15,7 @@ Fea.Map = function (options) {
 Fea.Map.prototype.initialize = function (options) {
     var o = options || {};
     this.phaser = o.phaser;
-    this.context = o.context;
+    this.canvas = o.canvas;
     this.sprites = o.sprites;
     if (o.json) {
         var j = o.json;
@@ -39,7 +39,7 @@ Fea.Map.prototype.initialize = function (options) {
                     this.layers.push(new Fea.Map.prototype.Layer({
                         json : j.layers[i], 
                         phaser : this.phaser,
-                        context : this.context,
+                        canvas : this.canvas,
                         tilesets : this.tilesets, 
                         tilewidth : this.tilewidth, 
                         tileheight : this.tileheight
@@ -56,7 +56,6 @@ Fea.Map.prototype.absoluteWidth = function () {
     return this.width && this.tilewidth ? this.width * this.tilewidth : 0;
 };
 Fea.Map.prototype.draw = function (x, y) {
-    console.log('Fea.Map.draw', this.phaser, this.context);
     var hash = [];
     for (var l=0; l<this.layers.length; l++) {
         hash = this.layers[l].draw(hash, x, y);
@@ -65,7 +64,7 @@ Fea.Map.prototype.draw = function (x, y) {
 
 Fea.Map.prototype.Layer = function (options) {
     this.phaser = undefined;
-    this.context = undefined;
+    this.canvas = undefined;
     this.tilesets = undefined;
     this.name = '';
     this.type = '';
@@ -81,7 +80,7 @@ Fea.Map.prototype.Layer = function (options) {
 Fea.Map.prototype.Layer.prototype.initialize = function (options) {
     var o = options || {};
     this.phaser = o.phaser;
-    this.context = o.context;
+    this.canvas = o.canvas;
     this.tilesets = o.tilesets;
     this.tilewidth = o.tilewidth || 0;
     this.tileheight = o.tileheight || 0;
@@ -103,8 +102,8 @@ Fea.Map.prototype.Layer.prototype.initialize = function (options) {
 Fea.Map.prototype.Layer.prototype.draw = function (hash, x, y) {
     hash = hash || [];
     var p = { x : x || this.x, y : y || this.y };
-    console.log('Fea.Map.Layer.draw', this.phaser, this.context);
-    if (this.tilesets && this.type === 'tilelayer' && (this.phaser || this.context)) {
+    var context = this.canvas ? this.canvas.getContext("2d") : undefined;
+    if (this.tilesets && this.type === 'tilelayer' && (this.phaser || context)) {
         for (var i=0; i<this.data.length; i++) {
             var n = this.data[i];
             if (n > 0) {
@@ -112,10 +111,10 @@ Fea.Map.prototype.Layer.prototype.draw = function (hash, x, y) {
                 if (ts) {
                     if (this.phaser) {
                         this.phaser.add.sprite(p.x, p.y, ts.name, n-1);
-                    } else if (this.context) {
+                    } else if (context) {
                         var coords = ts.tileCoordinatesPixel(n);
                         if (coords) {
-                            this.context.drawImage(ts.sprite, coords.x, coords.y, ts.tilewidth, ts.tileheight, 
+                            context.drawImage(ts.sprite, coords.x, coords.y, ts.tilewidth, ts.tileheight, 
                                         p.x, p.y, ts.tilewidth, ts.tileheight);
                         }
                     }
@@ -146,4 +145,107 @@ Fea.Map.prototype.createTilesetManager = function (tilesets) {
         }
     };
     return manager;
+};
+
+Fea.createMap = function (options) {
+    options = options || {};
+    if (options.json) {
+        return new Fea.Map(options);
+    } else if (options.url) {
+        if ($ || jQuery) {
+            var $ = $ || jQuery;
+            
+            var counter = { value : 0 };
+
+            var blankFunction = function () {
+                console.log("This is a blank function! It has no functionality. arguments=", arguments);
+                counter.value--;
+                if (counter.value <= 0) {
+                    spriteLoadingDone(true);
+                }
+            };
+            
+            var spriteLoadingDone = function (failed) {
+                if (true !== failed && options.done) {
+                    var map = new Fea.Map(options);
+                    options.done(map);
+                }
+            };
+
+            var createSpriteLoaded = function (url, name) {
+                if (url && name) {
+                    return function (event) {
+                        if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+                            console.log("Couldn't load image " + name + ":'" + url + "'!");
+                            options.sprites[name] = undefined;
+                        } else {
+                            options.sprites[name] = this;
+                        }
+                        counter.value--;
+                        if (counter.value <= 0) {
+                            spriteLoadingDone();
+                        }
+                    };
+                }
+                return blankFunction;
+            };
+            
+            var createCanvas = function (width, height) {
+                return $('<canvas width="'+ width +'" height="'+ height +'"></canvas>')[0];
+            };
+            
+            $.getJSON(options.url).done(function (json) {
+                options.json = json;
+                options.sprites = options.sprites || {};
+                
+                if (!options.phaser && !options.canvas) {
+                    var width = options.width || json.width * json.tilewidth;
+                    var height = options.height || json.height * json.tileheight;
+                    var canvas = createCanvas(width, height);
+                    if (canvas) {
+                        options.canvas = canvas;
+                        var added = false;
+                        if (options.parent) {
+                            $(options.parent).append(canvas);
+                            added = true;
+                        }
+                        if (!added) {
+                            $("body").append(canvas);
+                        }
+                    }
+                }
+                
+                var name, url, loadSprite;
+                for (var i = 0; i < json.tilesets.length; i++) {
+                    name = json.tilesets[i].name;
+                    url = options.sprites[name] || json.tilesets[i].image;
+                    options.sprites[name] = url;
+                    counter.value++;
+                    loadSprite = createSpriteLoaded(url, name);
+                    $("<img />").attr("src", url).load(loadSprite);
+                }
+                name = url = loadSprite = undefined;
+            }).fail(function() {
+                console.log("Couldn't load json file '" + options.url + "'!");
+            });
+        }
+    }
+};
+
+Fea.renderMap = function (options) {
+    options = options || {};
+    if (options.map) {
+        options.map.draw();
+    } else {
+        var superCallback = options.done;
+        options.done = function (map) {
+            if (map) {
+                map.draw();
+            }
+            if (superCallback) {
+                superCallback(map);
+            }
+        };
+        Fea.createMap(options);
+    }
 };
