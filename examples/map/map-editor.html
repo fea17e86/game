@@ -1,0 +1,124 @@
+<!Doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>map editor</title>
+    <link rel="stylesheet" href="../../bootstrap/css/bootstrap.min.css" type="text/css" media="all" />
+    <style type="text/css">
+        .nbl { border-left: none 0 transparent; }
+        .nbr { border-right: none 0 transparent; }
+        label > .help-text { font-weight : normal; }
+    </style>
+</head>
+<body>
+    <div class="modal" id="map_size" data-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" onclick="dialog.start();" title="Zur&uuml;cksetzen"><span class="glyphicon glyphicon-remove"></span></button>
+                    <h4 class="modal-title">Kartengr&ouml;&szlig;e</h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form">
+                        <div class="form-group">
+                            <label for="mapsize">Kartengr&ouml;&szlig;e <span class="help-text">(Kachelanzahl)</span></label>
+                            <div id="mapsize" class="input-group">
+                                <input type="number" class="form-control" id="width" placeholder="Breite" min="1">
+                                <div class="input-group-addon nbl nbr">x</div>
+                                <input type="number" class="form-control" id="height" placeholder="H&ouml;he" min="1">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="tilesize">Kachelgr&ouml;&szlig;e <span class="help-text">(Pixel)</span></label>
+                            <div id="tilesize" class="input-group">
+                                <input type="number" class="form-control" id="tilewidth" placeholder="Breite" min="1">
+                                <div class="input-group-addon nbl nbr">x</div>
+                                <input type="number" class="form-control" id="tileheight" placeholder="H&ouml;he" min="1">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info" onclick="dialog.next();" title="Weiter"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="map_parts" data-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" onclick="dialog.start();" title="Zur&uuml;cksetzen"><span class="glyphicon glyphicon-remove"></span></button>
+                    <h4 class="modal-title">Karten Importieren</h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form" id="mapurls">
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input type="url" class="form-control map-url" placeholder="URL zur Karte" onkeyup="resetUrlState($(this).next().children('.btn'));">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button" onclick="checkMapUrl($(this).parent().prev(), $(this));" title="URL &uuml;berpr&uuml;fen"><span class="glyphicon glyphicon-question-sign"></span></button>
+                                </span>
+                            </div>
+                        </div>
+                    </form>
+                    <form role="form">
+                        <div class="form-group">
+                            <button class="btn btn-warning" type="button" onclick="addMapUrl();" title="Weitere Karte importieren"><span class="glyphicon glyphicon-plus"></span></button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info" onclick="dialog.previous();" title="Zur&uuml;ck"><span class="glyphicon glyphicon-chevron-left"></span></button>
+                    <button type="button" class="btn btn-info" onclick="dialog.next();" title="Weiter"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="map_tilesets" data-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" onclick="dialog.start();" title="Zur&uuml;cksetzen"><span class="glyphicon glyphicon-remove"></span></button>
+                    <h4 class="modal-title">Tilesets Importieren</h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form" id="tileseturls">
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input type="url" class="form-control tileset-url" placeholder="URL zum Tileset" onkeyup="resetUrlState($(this).next().children('.btn'));">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button" onclick="checkTilesetUrl($(this).parent().prev(), $(this));" title="URL &uuml;berpr&uuml;fen"><span class="glyphicon glyphicon-question-sign"></span></button>
+                                </span>
+                            </div>
+                        </div>
+                    </form>
+                    <form role="form">
+                        <div class="form-group">
+                            <button class="btn btn-warning" type="button" onclick="addTilesetUrl();" title="Weitere Tilesets importieren"><span class="glyphicon glyphicon-plus"></span></button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info" onclick="dialog.previous();" title="Zur&uuml;ck"><span class="glyphicon glyphicon-chevron-left"></span></button>
+                    <button type="button" class="btn btn-success" onclick="dialog.finish();" title="Fertig"><span class="glyphicon glyphicon-ok"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+    <script src="../../bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../js/tileset.js"></script>
+    <script src="../../js/map.js"></script>
+    <script src="map-editor-dialog.js"></script>
+    <script>
+        $(function () {
+            dialog.start();
+        });
+    </script>
+</body>
+</html>
