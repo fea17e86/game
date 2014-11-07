@@ -43,7 +43,7 @@ function checkMapUrl($input, $button) {
                         urlSuccess($button);
                         success = true;
                         if (!dialog._jsonCache[url]) {
-                            dialog._jsonCache[url] = data;
+                            addMapToCache({ url: url, json: data });
                         }
                     }
                 }
@@ -57,17 +57,37 @@ function checkMapUrl($input, $button) {
     }
 }
 
+function addMapToCache (args) {
+    if (args && args.url) {
+        if (args.json) {
+            dialog._jsonCache[args.url] = args.json;
+        } else {
+            dialog._jsonCache[args.url] = {};
+            $.get(args.url).done(function(data, status, xhr) {
+                var ct;
+                if ((ct = xhr.getResponseHeader("content-type"))) {
+                    if (ct.indexOf("json") > -1) {
+                        dialog._jsonCache[args.url] = data;
+                    }
+                }
+            });
+        }
+    }
+}
+
 function addMapUrl() {
     $("#mapurls").append($(
-        '<div class="form-group">' + '<div class="input-group">' + '<input type="url" class="form-control map-url" placeholder="URL zur Karte" onkeyup="resetUrlState($(this).next().children(\'.btn\'));">' + '<span class="input-group-btn">' + '<button class="btn btn-default" type="button" onclick="checkMapUrl($(this).parent().prev(), $(this));" title="URL &uuml;berpr&uuml;fen"><span class="glyphicon glyphicon-question-sign"></span></button>' + '</span>' + '</div>' + '</div>'
+        '<div class="form-group"><div class="input-group"><input type="url" class="form-control map-url" placeholder="URL zur Karte" onkeyup="resetUrlState($(this).next().children(\'.btn\'));">'
+            + '<span class="input-group-btn"><button class="btn btn-default" type="button" onclick="checkMapUrl($(this).parent().prev(), $(this));" title="URL &uuml;berpr&uuml;fen">'
+            + '<span class="glyphicon glyphicon-question-sign"></span></button></span></div></div>'
     ));
 }
 
 function checkTilesetUrl($input, $button) {
     if ($input && $button) {
-        var url = $input.val();
-        if (url) {
-            $.get(url).done(function(data, status, xhr) {
+        var ts = parseTileset($input.val());
+        if (ts && ts.url) {
+            $.get(ts.url).done(function(data, status, xhr) {
                 var success = false;
                 var ct;
                 if ((ct = xhr.getResponseHeader("content-type"))) {
@@ -86,9 +106,20 @@ function checkTilesetUrl($input, $button) {
     }
 }
 
+function parseTileset (value) {
+    if (value) {
+        var tokens = value.split(":");
+        if (tokens.length > 1) {
+            return { name: tokens[0].trim(), url: tokens[1].trim() };
+        }
+    }
+}
+
 function addTilesetUrl() {
     $("#tileseturls").append($(
-        '<div class="form-group">' + '<div class="input-group">' + '<input type="url" class="form-control tileset-url" placeholder="URL zur Grafik" onkeyup="resetUrlState($(this).next().children(\'.btn\'));">' + '<span class="input-group-btn">' + '<button class="btn btn-default" type="button" onclick="checkTilesetUrl($(this).parent().prev(), $(this));" title="URL &uuml;berpr&uuml;fen"><span class="glyphicon glyphicon-question-sign"></span></button>' + '</span>' + '</div>' + '</div>'
+        '<div class="form-group"><div class="input-group"><input type="url" class="form-control tileset-url" placeholder="Name : URL zum Tileset" onkeyup="resetUrlState($(this).next().children(\'.btn\'));">'
+            + '<span class="input-group-btn"><button class="btn btn-default" type="button" onclick="checkTilesetUrl($(this).parent().prev(), $(this));" title="URL &uuml;berpr&uuml;fen"><span class="glyphicon glyphicon-question-sign">'
+            + '</span></button></span></div></div>'
     ));
 }
 
@@ -126,17 +157,23 @@ var dialog = {
         }
     },
     _current: -1,
-    _getAttributeValue: function(selector) {
+    _getAttributeValue: function(name, selector) {
         var value;
         var $element = $(selector);
         if ($element.size() > 1) {
             value = [];
+            var self = this;
+            var added = {};
+            var val;
             $element.each(function() {
-                value.push($(this).val());
+                val = self._parseAttribute(name, $(this).val());
+                if (!added[val]) {
+                    value.push(val);
+                    added[val] = true;
+                }
             });
-        }
-        else {
-            value = $element.val();
+        } else {
+            value = this._parseAttribute(name, $element.val());
         }
         return value;
     },
@@ -147,6 +184,14 @@ var dialog = {
     },
     _jsonCache: {},
     _onCancel: function() {},
+    _parseAttribute : function (name, value) {
+        if (name === "height" || name === "width" || name === "tileheight" || name === "tilewidth") {
+            return parseInt(value);
+        } else if (name === "tileseturls" && value) {
+            return parseTileset(value);
+        }
+        return value;
+    },
     _showCurrent: function() {
         if (this._current >= 0 && this._current < this._states.length) {
             $(this._states[this._current]).modal("show");
@@ -168,7 +213,7 @@ var dialog = {
         data.json = this._jsonCache;
         for (var s = 0; s < this._states.length; s++) {
             for (var a = 0; a < this._attributes[s].length; a++) {
-                data[this._attributes[s][a].name] = this._getAttributeValue(this._attributes[s][a].selector);
+                data[this._attributes[s][a].name] = this._getAttributeValue(this._attributes[s][a].name, this._attributes[s][a].selector);
             }
         }
         this.onFinish(data);

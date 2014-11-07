@@ -8,6 +8,13 @@
         .nbl { border-left: none 0 transparent; }
         .nbr { border-right: none 0 transparent; }
         label > .help-text { font-weight : normal; }
+        .map-canvas {
+            border: solid 1px #000;
+            left: 0;
+            overflow: hidden;
+            position: absolute;
+            top: 0;
+        }
     </style>
 </head>
 <body>
@@ -88,7 +95,7 @@
                     <form role="form" id="tileseturls">
                         <div class="form-group">
                             <div class="input-group">
-                                <input type="url" class="form-control tileset-url" placeholder="URL zum Tileset" onkeyup="resetUrlState($(this).next().children('.btn'));">
+                                <input type="text" class="form-control tileset-url" placeholder="Name : URL zum Tileset" onkeyup="resetUrlState($(this).next().children('.btn'));">
                                 <span class="input-group-btn">
                                     <button class="btn btn-default" type="button" onclick="checkTilesetUrl($(this).parent().prev(), $(this));" title="URL &uuml;berpr&uuml;fen"><span class="glyphicon glyphicon-question-sign"></span></button>
                                 </span>
@@ -117,8 +124,48 @@
     <script src="map-editor-dialog.js"></script>
     <script>
         $(function () {
+            dialog.onFinish = function (data) {
+                console.log(data);
+                var $canvas = createCanvas(data);
+                if (data.tileseturls) {
+                    data.tilesets = parseTilesets(data);
+                }
+                if (data.mapurls) {
+                    if ($.isArray(data.mapurls)) {
+                        for (var i=0; i<data.mapurls.length; i++) {
+                            Fea.renderMap({ url : data.mapurls[i], sprites : data.tilesets, parent : $canvas });
+                        }
+                    } else {
+                        Fea.renderMap({ url : data.mapurls, sprites : data.tilesets, parent : $canvas });
+                    }
+                }
+            };
             dialog.start();
         });
+        
+        function parseTilesets (data) {
+            var tilesets = {};
+            if (data && data.tileseturls) {
+                if ($.isArray(data.tileseturls)) {
+                    for (var i=0; i<data.tileseturls.length; i++) {
+                        if (data.tileseturls[i].name && data.tileseturls[i].url) {
+                            tilesets[data.tileseturls[i].name] = data.tileseturls[i].url;
+                        }
+                    }
+                } else if (data.tileseturls.name && data.tileseturls.url) {
+                    tilesets[data.tileseturls.name] = data.tileseturls.url;
+                }
+            }
+            return tilesets;
+        }
+        
+        function createCanvas (data) {
+            if (data && data.height && data.width && data.tileheight && data.tilewidth) {
+                var $canvas = $('<div class="map-canvas" style="width:'+ (data.width * data.tilewidth) +'px; height:'+ (data.height * data.tileheight) +'px"></div>');
+                $('body').append($canvas);
+                return $canvas;
+            }
+        }
     </script>
 </body>
 </html>
